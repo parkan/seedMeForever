@@ -18,7 +18,13 @@ r = Routine({
 		var bird = ~birds[num];
 		Buffer.read(s, bird.path, 0, -1, { |buf|
 			{ var splayed =
-				0.8*Splay.ar(PlayBuf.ar(buf.numChannels, buf, BufRateScale.kr(buf), doneAction: Done.freeSelf));
+				Splay.ar(
+					PlayBuf.ar(buf.numChannels,buf, BufRateScale.kr(buf), doneAction: Done.freeSelf),
+					1,
+					0.7,
+					0.0,
+					true
+				);
 				0.33 * GVerb.ar(
 					splayed,
 					100, // roomsize
@@ -47,6 +53,6 @@ r.stop;
 	//var pulsed = Pulse.ar(116, SinOsc.kr(0.4, 0, 0.2, 0.5));
 	var noise = PinkNoise.ar(0.7);
 	var filtered = LPF.ar(noise, SinOsc.kr(24, 0, 10, 110));
-	Splay.ar(filtered);
+	1.5*Splay.ar(filtered);
 }.play
 
