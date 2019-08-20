@@ -17,9 +17,9 @@ r = Routine({
 		var num = ~birds.size.rand;
 		var bird = ~birds[num];
 		Buffer.read(s, bird.path, 0, -1, { |buf|
-			{ var splayed =
+			x = { var splayed =
 				Splay.ar(
-					PlayBuf.ar(buf.numChannels,buf, BufRateScale.kr(buf), doneAction: Done.freeSelf),
+					PlayBuf.ar(buf.numChannels,buf, BufRateScale.kr(buf), doneAction: Done.freeSelfAndPrev),
 					1,
 					0.7,
 					0.0,
@@ -35,19 +35,22 @@ r = Routine({
 					3 // dry mix
 				) * EnvGen.kr(Env.sine(BufDur.kr(buf)));
 			}.play;
+			// free 5s after buffer end to allow for reverb tail
+			// would prefer to do this with Done.kr(x)... but no idea how to run a Function from that?
+			{
+				// "deallocating buffer".postln;
+				buf.free;
+			}.defer(buf.duration + 5);
 		});
-		//"Bird duration? ".post; bird.duration.postln;
+		// "Bird duration? ".post; bird.duration.postln;
 		delta = rrand(bird.duration * 0.5, bird.duration * 1.2);
-		//"Will wait ".post; delta.postln;
+		// "Will wait ".post; delta.postln;
 		delta.yield;
     }
 });
 
-r.next;
 
 SystemClock.sched(0, r);
-
-r.stop;
 
 {
 	//var pulsed = Pulse.ar(116, SinOsc.kr(0.4, 0, 0.2, 0.5));
@@ -56,3 +59,5 @@ r.stop;
 	1.5*Splay.ar(filtered);
 }.play
 
+r.next;
+r.stop;
