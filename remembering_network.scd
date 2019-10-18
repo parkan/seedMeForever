@@ -1,3 +1,4 @@
+s.options.memSize = 65536;
 s.boot;
 
 ~cwd = thisProcess.nowExecutingPath.dirname +/+ "/samples/*";
@@ -27,7 +28,7 @@ r = Routine({
 					0.0,
 					true
 				);
-				0.33 * GVerb.ar(
+				0.25 * GVerb.ar(
 					splayed,
 					100, // roomsize
 					5, // revtime
@@ -44,12 +45,22 @@ r = Routine({
 				buf.free;
 			}.defer(buf.duration + 5);
 		});
-		// "Bird duration? ".post; bird.duration.postln;
-		delta = rrand(bird.duration * -0.5, bird.duration * 0.2).clip(12.0);
+
+		// always play at least 1 second uninterrupted
+		d = bird.duration.max(1);
+		// for longer samples, we want to increase the likelihood that another sample will play during it (but never before sec 1)
+		n = -1 * d.linlin(1, 120, 0, d - 1);
+		"n: ".post; n.postln;
+		// for shorter samples, it's better to wait (TODO: pick an lincurve that does this better)
+		p = d.linlin(1, 30, d * 3, 0);
+		"p: ".post; p.postln;
+		// delta = rrand(bird.duration * -0.5, bird.duration * 0.2).clip2(10.0 + rrand(-6.0,0.0));
+		delta = rrand(n, p);
 		"will wait ".post; delta.post; "/ sample length: ".post; bird.duration.postln;
-		(bird.duration + delta).yield;
+		(d + delta).yield;
     }
 });
+
 
 // begin bird loop
 SystemClock.sched(0, r);
