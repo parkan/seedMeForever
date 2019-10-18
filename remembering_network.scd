@@ -1,3 +1,5 @@
+s.boot;
+
 ~cwd = thisProcess.nowExecutingPath.dirname +/+ "/samples/*";
 ~birds = SoundFile.collect(~cwd, s);
 
@@ -43,21 +45,26 @@ r = Routine({
 			}.defer(buf.duration + 5);
 		});
 		// "Bird duration? ".post; bird.duration.postln;
-		delta = rrand(bird.duration * 0.5, bird.duration * 1.2);
-		// "Will wait ".post; delta.postln;
-		delta.yield;
+		delta = rrand(bird.duration * -0.5, bird.duration * 0.2).clip(12.0);
+		"will wait ".post; delta.post; "/ sample length: ".post; bird.duration.postln;
+		(bird.duration + delta).yield;
     }
 });
 
-
+// begin bird loop
 SystemClock.sched(0, r);
 
+// background tone
 {
+	// pulsed is harsher, noise is chiller
 	//var pulsed = Pulse.ar(116, SinOsc.kr(0.4, 0, 0.2, 0.5));
 	var noise = PinkNoise.ar(0.7);
 	var filtered = LPF.ar(noise, SinOsc.kr(24, 0, 10, 110));
 	1.5*Splay.ar(filtered);
 }.play
 
-r.next;
+/* HELPER CONTROLS:
+r.play;
 r.stop;
+r.next;
+*/
