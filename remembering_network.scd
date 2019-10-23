@@ -1,18 +1,64 @@
-s.options.memSize = 65536;
-s.boot;
+o = Server.default.options;
+o.memSize_(31*65536);
+o.inDevice_("ASIO : Dante Virtual Soundcard");
+o.outDevice_("ASIO : Dante Virtual Soundcard");
+o.sampleRate_(48000);
+o.numWireBufs_(4096);
+o.numOutputBusChannels_(4);
+Server.default.reboot;
+
 
 ~cwd = thisProcess.nowExecutingPath.dirname +/+ "/samples/*";
 ~birds = SoundFile.collect(~cwd, s);
 
+(
+SynthDef(\boid, {| out = 0, buf = 0 |
+    Out.ar(out,
+		PlayBuf.ar(2, buf, BufRateScale.kr(buf), doneAction: Done.freeSelf) * EnvGen.kr(Env.sine(BufDur.kr(buf)));
+    )
+}).add;
 
-/*		0.1*Splay.ar(b.play(s, [\out, 0, \buf, buf]),
-			1, // field width
-			1, // level scaling
-			0.0, // pan bias
-			false // replayGain™
-		);*/
+SynthDef(\bigverb, { arg outBus = 0, inBus;
+    var input, verbed, panned;
+    input = In.ar(inBus, 4);
+	panned = 0.10*PanAz.ar(
+		numChans: 4,
+		in: input,
+		pos: 1.7,
+		level: 1.0,
+		width: 2
+	);
+	verbed = GVerb.ar(
+		panned,
+		100, // roomsize
+		7, // revtime
+		SinOsc.kr(0.2,0,0.1,0.5),
+		0.7,
+		20,
+		3 // dry mix
+	);
 
+	Out.ar(outBus, panned);
+}).add;
 
+)
+
+/*0.10*PanAz.ar(
+	numChans: 39,
+	in: verbed,
+	pos: 1.7,
+	level: 1.0,
+	width: 3
+);*/
+
+(
+x = Synth.new(\bigverb, [ \inBus, b ]);
+y = {Out.ar(b, SinOsc.ar(440))}.play(addAction: \addToHead);
+)
+
+(
+b = Bus.audio(s, 4);
+x = Synth.new(\bigverb, [ \inBus, b ]);
 
 r = Routine({
     var delta;
@@ -20,24 +66,7 @@ r = Routine({
 		var num = ~birds.size.rand;
 		var bird = ~birds[num];
 		Buffer.read(s, bird.path, 0, -1, { |buf|
-			x = { var splayed =
-				Splay.ar(
-					PlayBuf.ar(buf.numChannels,buf, BufRateScale.kr(buf), doneAction: Done.freeSelfAndPrev),
-					1,
-					0.7,
-					0.0,
-					true
-				);
-				0.25 * GVerb.ar(
-					splayed,
-					100, // roomsize
-					5, // revtime
-					SinOsc.kr(0.2,0,0.1,0.5),
-					0.7,
-					20,
-					3 // dry mix
-				) * EnvGen.kr(Env.sine(BufDur.kr(buf)));
-			}.play;
+			Synth.before(x, \boid, [\out, b, \buf, buf]);
 			// free 5s after buffer end to allow for reverb tail
 			// would prefer to do this with Done.kr(x)... but no idea how to run a Function from that?
 			{
@@ -60,6 +89,10 @@ r = Routine({
 		(d + delta).yield;
     }
 });
+
+)
+
+r.next();
 
 
 // begin bird loop
