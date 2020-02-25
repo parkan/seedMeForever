@@ -1,6 +1,3 @@
-s.options.memSize = 65536;
-s.boot;
-
 ~cwd = thisProcess.nowExecutingPath.dirname +/+ "/samples/*";
 ~birds = SoundFile.collect(~cwd, s);
 
@@ -11,8 +8,6 @@ s.boot;
 			0.0, // pan bias
 			false // replayGain™
 		);*/
-
-
 
 r = Routine({
     var delta;
@@ -51,6 +46,8 @@ r = Routine({
 			}.defer(buf.duration + 5);
 		});
 
+		1.yield;
+
 		"sample length: ".post; bird.duration.postln;
 
 		// always play at least 1 second uninterrupted
@@ -62,13 +59,13 @@ r = Routine({
 		);
 		"max overlap: ".post; o.postln;
 		// create room between short samples
-		s = d.linlin(
+		p = d.linlin(
 			1, 30,
 			d * 3, 0
 		);
-		"max spacing: ".post; s.postln;
+		"max spacing: ".post; p.postln;
 		// delta = rrand(bird.duration * -0.5, bird.duration * 0.2).clip2(10.0 + rrand(-6.0,0.0));
-		delta = rrand(-1 * o, s);
+		delta = rrand(-1 * o, p);
 		"will wait ".post; delta.postln;
 		(d + delta).yield;
     }
