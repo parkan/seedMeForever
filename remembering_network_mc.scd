@@ -186,9 +186,24 @@ r.next;
 
 
 // THE GOOD SHIT (UP TO 5TH ORDER)
-~order = 4;
+~order = 3;
 ~hoaNumChannels = (~order+1).pow(2);
 s.scope(~hoaNumChannels, 2);
+
+(
+~hoaSignal = NodeProxy.new(s, \audio, ~hoaNumChannels);
+~hoaSignal.source = {HOAEncoder.ar(~order, WhiteNoise.ar(1), pi* 0.25, pi* 0.25 )};
+~hoaSignal.fadeTime = 1;
+~hoaSignal.play(0, ~hoaNumChannels);
+)
+
+~inFormat = \ACN_N3D; // we want this
+// try all three different out formats
+~outFormat = \ACN_SN3D;
+~outFormat = \ACN_N3D; // we want this
+~outFormat = \FuMa;
+
+~hoaSignal.source = {HOAConvert.ar(~order,  HOAEncoder.ar(~order, WhiteNoise.ar(1), pi* 0.25, pi* 0.25 ), ~inFormat, ~outFormat)};
 
 {
 HOAEncoder.ar(
