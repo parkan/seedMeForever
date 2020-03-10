@@ -46,8 +46,6 @@ r = Routine({
 			}.defer(buf.duration + 5);
 		});
 
-		1.yield;
-
 		"sample length: ".post; bird.duration.postln;
 
 		// always play at least 1 second uninterrupted

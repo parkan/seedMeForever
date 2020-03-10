@@ -117,6 +117,8 @@ r.stop;
 r.next;
 */
 
+// FIRST ORDER ONLY (DO NOT USE)
+
 // ------------------------------------------------------------
 // virtual microphone stereo decoder
 //
@@ -182,30 +184,29 @@ r.next;
 // free kernel
 ~decoder.free
 
-(
-[
-	HOADecLebedev06.numChannels == 6,
-	HOADecLebedev26.numChannels == 26,
-	HOADecLebedev50.numChannels == 50,
-	HOADecLebedev06.maxOrder == 1,
-	HOADecLebedev26.maxOrder == 3,
-	HOADecLebedev50.maxOrder == 5
-].detectIndex{|v| v.not}.notNil.if{
-	"channel/order mismatch detected.".error;
-};
 
-s.options
-.numInputBusChannels_(2)
-.numOutputBusChannels_(36)
-.numAudioBusChannels_(2048) // default is 1024
-.blockSize_(512)
-.numWireBufs_(1024)
-.memSize_(2**16)
-.sampleRate_(48000);
+// THE GOOD SHIT (UP TO 5TH ORDER)
+~order = 4;
+~hoaNumChannels = (~order+1).pow(2);
+s.scope(~hoaNumChannels, 2);
+
+{
+HOAEncoder.ar(
+	~order,
+		PinkNoise.ar,
+		MouseX.kr(-pi, pi), // az
+		0, // elev
+	0, // gain
+	1, // spherical
+	MouseY.kr(0, 1), // distance to source
+	// speaker radius??
+)
+}.play
 
 
-// initialise everything for the tests
+
 s.doWhenBooted{
+	"loading ambisonics".postln;
 	HOADecLebedev26.loadHrirFilters(s, "/Users/arkadiy/Documents/repos/ambitools/FIR/hrir/hrir_christophe_lebedev50");
 	HOADecLebedev06.loadHrirFilters(s, "/Users/arkadiy/Documents/repos/ambitools/FIR/hrir/hrir_christophe_lebedev50");
 	~order = 4;
@@ -225,7 +226,7 @@ s.doWhenBooted{
 			WhiteNoise.ar,
 			MouseX.kr(pi, -pi), MouseY.kr(-pi * 0.5, pi * 0.5)
 		)
-	});
+	}).play;
 
 	s.sync;
 
@@ -233,10 +234,10 @@ s.doWhenBooted{
 	Ndef(\decoder, {
 		var in = \in.ar(0!(~hoaNumChannels));
 		in
-	});
+	}).play;
 
 	1.wait;
-	Ndef(\hoaSignal) <>> Ndef(\decoder); // watch the oscilloscope
+	Ndef(\hoaSignal).gui <>> Ndef(\decoder).gui; // watch the oscilloscope
 };
 
 // reboot server (in case it was booted already, this will trigger evaluation of the above-defined doWhenBooted function

@@ -9,7 +9,8 @@ NOTE: this needs to be in:
 
 Server.local.options
 //.device("ASIO : Dante Virtual Soundcard")
-.numOutputBusChannels_(2)
+.numOutputBusChannels_(36)
+.numInputBusChannels(2)
 .numAudioBusChannels_(2048)
 .blockSize_(512)
 .numWireBufs_(4096)
